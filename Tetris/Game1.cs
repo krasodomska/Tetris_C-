@@ -20,32 +20,37 @@ namespace Tetris
         Texture2D textureWhiteBox;
         Texture2D textureYellowBox;
 
-        string[,] boxPlane = new string[20, 10] { 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
+
+        string[,] boxPlane = new string[20, 10] {
             { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }, 
-            { "n", "n", "b", "n", "b", "b", "n", "n", "b", "n" }
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
+            { "n", "b", "b", "n", "b", "b", "n", "n", "b", "n" }
         };
 
         TimeSpan nextUpdateTime = TimeSpan.FromSeconds(0);
-        Block newBlock = new Block();
+        TimeSpan nextUpdateControlTime = TimeSpan.FromSeconds(0);
+        Block currentBlock = Block.randomBlock();
+        Block futureBlock = Block.randomBlock();
+        double boxFallingSpeed = 0.5; //base speed
 
+        int score = 0;
 
         public Game1()
         {
@@ -86,7 +91,7 @@ namespace Tetris
             textureWhiteBox = Content.Load<Texture2D>("tetris_white");
             textureYellowBox = Content.Load<Texture2D>("tetris_yellow");
 
-            
+
         }
 
         /// <summary>
@@ -103,41 +108,75 @@ namespace Tetris
         /// checking for collisions, gathering input, and playing audio.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-
         protected override void Update(GameTime gameTime)
         {
+            currentBlock.printCoordinates();
+            //Console.WriteLine(BlockSpecyfication[0]);
+
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
-            // TODO: Add your update logic here
-            // Console.WriteLine(gameTime.TotalGameTime);
-
-            if (gameTime.TotalGameTime >= nextUpdateTime) //is doing co 5 s
+            var kstate = Keyboard.GetState();
+            // controls
+            if (kstate.IsKeyDown(Keys.Down))
             {
-                nextUpdateTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(1));
-                if(newBlock.y <19)
-                    newBlock.y += 1;
-                /*for (int row = 19; row >= 0; row--)
+                boxFallingSpeed = 0.01;
+            }
+            else
+            {
+                boxFallingSpeed = 0.5;
+            }
+            if (gameTime.TotalGameTime >= nextUpdateControlTime)
+            {
+                nextUpdateControlTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(0.1));
+
+                if (kstate.IsKeyDown(Keys.Left) && collisionDetection((int)direction.left) == false)
                 {
-                    for (int collumn = 9; collumn >= 0; collumn--)
+                    currentBlock.x -= 1;
+                }
+
+                if (kstate.IsKeyDown(Keys.Right) && collisionDetection((int)direction.right) == false)
+                {
+                    if (currentBlock.x < 8)
                     {
-                        if (boxPlane[row, collumn] == "w")
+                        currentBlock.x += 1;
+                    }
+                }
+            }
+
+            //how box fall down
+            if (gameTime.TotalGameTime >= nextUpdateTime)
+            {
+                nextUpdateTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(boxFallingSpeed));
+                if (currentBlock.y < 18 && collisionDetection((int)direction.down) == false)
+                    currentBlock.y += 1;
+
+                if (collisionDetection((int)direction.down) == true)
+                {
+                    for (int row = 3; row >= 0; row--)
+                    {
+                        for (int collumn = 3; collumn >= 0; collumn--)
                         {
-                            if (row == 19 || boxPlane[row + 1, collumn] != "n")
+                            if (currentBlock.BlockArray[row, collumn] == "w")
                             {
-                                boxPlane[row, collumn] = "b";
-                            }
-                            else
-                            {
-                                boxPlane[row, collumn] = "n";
-                                boxPlane[row + 1, collumn] = "w";
+                                boxPlane[currentBlock.y + row, currentBlock.x + collumn] = "b";
                             }
                         }
                     }
-                }    */              
+                    nextBlock();
+                }
             }
+            //when the row is full i turn on gravity
+
+            if (numberFullRow() != -1)
+            {
+                gravity(numberFullRow());
+            }
+            
+
             base.Update(gameTime);
         }
+
 
         /// <summary>
         /// This is called when the game should draw itself.
@@ -157,21 +196,9 @@ namespace Tetris
             spriteBatch.Draw(textureGreenBox, new Vector2(605, 40), Color.White);
             spriteBatch.Draw(textureYellowBox, new Vector2(640, 40), Color.White);
             spriteBatch.Draw(textureRedBox, new Vector2(675, 40), Color.White);
-            //this drow blank place to play
-            /*int x = 5; //value of position Box x,y
-            int y = 15;
-            for (int row = 0; row < 20; row++)
-            {
-                for (int collumn = 0; collumn < 10; collumn++)
-                {
-                    spriteBatch.Draw(textureBlankBox, new Vector2(x, y), Color.White);
-                    x += 31;
-                }
-                y += 31;
-                x = 5;
-            }*/
+
             // n = blank, w = white, y = yellow, r = red, g = green, b = blue BOX
-           
+
             int x; //value of position Box x,y
             int y;
             for (int row = 0; row < 20; row++)
@@ -184,7 +211,7 @@ namespace Tetris
                     {
                         spriteBatch.Draw(textureBlankBox, new Vector2(x, y), Color.White);
                     }
-                    if (boxPlane[row,collumn] == "w")
+                    if (boxPlane[row, collumn] == "w")
                     {
                         spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
                     }
@@ -205,33 +232,33 @@ namespace Tetris
                         spriteBatch.Draw(textureYellowBox, new Vector2(x, y), Color.White);
                     }
                 }
-                
+
             }
-            
+            //falling Block
             for (int row = 0; row < 4; row++)
             {
                 for (int collumn = 0; collumn < 4; collumn++)
                 {
-                    x = (newBlock.x + collumn) * 31 + 5;
-                    y = (newBlock.y + row) * 31 + 15;
+                    x = (currentBlock.x + collumn) * 31 + 5;
+                    y = (currentBlock.y + row) * 31 + 15;
 
-                    if (newBlock.BlockArray[row, collumn] == "w")
+                    if (currentBlock.BlockArray[row, collumn] == "w")
                     {
                         spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
                     }
-                    if (newBlock.BlockArray[row, collumn] == "r")
+                    if (currentBlock.BlockArray[row, collumn] == "r")
                     {
                         spriteBatch.Draw(textureRedBox, new Vector2(x, y), Color.White);
                     }
-                    if (newBlock.BlockArray[row, collumn] == "g")
+                    if (currentBlock.BlockArray[row, collumn] == "g")
                     {
                         spriteBatch.Draw(textureGreenBox, new Vector2(x, y), Color.White);
                     }
-                    if (newBlock.BlockArray[row, collumn] == "b")
+                    if (currentBlock.BlockArray[row, collumn] == "b")
                     {
                         spriteBatch.Draw(textureBlueBox, new Vector2(x, y), Color.White);
                     }
-                    if (newBlock.BlockArray[row, collumn] == "y")
+                    if (currentBlock.BlockArray[row, collumn] == "y")
                     {
                         spriteBatch.Draw(textureYellowBox, new Vector2(x, y), Color.White);
                     }
@@ -239,12 +266,161 @@ namespace Tetris
 
             }
 
+            //Side block
+            for (int row = 0; row < 4; row++)
+            {
+                for (int collumn = 0; collumn < 4; collumn++)
+                {
+                    x = (futureBlock.x + collumn) * 31 + 405;
+                    y = (futureBlock.y +1 + row) * 31 + 15;
 
+                    if (futureBlock.BlockArray[row, collumn] == "n")
+                    {
+                        spriteBatch.Draw(textureBlankBox, new Vector2(x, y), Color.White);
+                    }
+                    if (futureBlock.BlockArray[row, collumn] == "w")
+                    {
+                        spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
+                    }
 
+                }
+            }
 
             spriteBatch.End();
-
             base.Draw(gameTime);
+        }
+
+
+
+        //Her
+        enum direction { left, right, down, top };
+
+        public bool collisionDetection(int choosedDirection)
+        {
+            for (int row = 3; row >= 0; row--)
+            {
+                for (int collumn = 3; collumn >= 0; collumn--)
+                {
+                    if (currentBlock.BlockArray[row, collumn] == "w")
+                    {
+                        if (choosedDirection == 0)
+                        {
+                            if (collumn + currentBlock.x == 0 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn - 1] != "n")
+                            {
+                                return true;
+                            }
+                        }
+                        if (choosedDirection == 1)
+                        {
+                            if (collumn + currentBlock.x == 9 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn + 1] != "n")
+                            {
+                                return true;
+                            }
+                        }
+
+                        if (choosedDirection == 2)
+                        {
+
+                            if (currentBlock.y + row == 19 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn] != "n")
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public int maxCoordination(int checkedCoorditantion)
+        {
+            int collumnNumber = 0;
+            if (checkedCoorditantion == 1)
+            {
+                collumnNumber = 4;
+                for (int collumn = 3; collumn >= 0; collumn--)   
+                {
+                    collumnNumber -=1;
+                    for (int row = 3; row >= 0; row--)
+                    {
+                        
+                        if (currentBlock.BlockArray[row, collumn] == "w")
+                        {
+
+                            return collumnNumber;
+                        }
+                    }
+                }
+            }
+            if (checkedCoorditantion == 0)
+            {
+                collumnNumber = -1;
+                for (int collumn = 0; collumn < 4; collumn++)  
+                {
+                    collumnNumber += 1;
+                    for(int row = 3; row >= 0; row--)
+                    {
+                        if (currentBlock.BlockArray[row, collumn] == "w")
+                        {
+
+                            return collumnNumber;
+                        }
+                    }
+                }
+            }
+            return collumnNumber;
+        }
+
+    
+
+        public int numberFullRow()
+        {
+            int numberOfFullBox = 1;
+            int fullRow = 0;
+            for (int row = 0; row < 20; row++)
+            {
+                
+                for (int collumn = 0; collumn < 10; collumn++)
+                {
+                    if (boxPlane[row, collumn] == "b")
+                    {
+                        numberOfFullBox += 1;
+                    }
+                }
+                if (numberOfFullBox == 10)
+                {
+                    score += 1;
+                    Console.WriteLine(score);
+                    return fullRow;
+                }
+                fullRow += 1;
+                numberOfFullBox = 0;
+            }
+            return -1;
+        }
+        public void gravity(int start)
+        {
+            for (int row = start; row >= 0; row--)
+            {
+                for (int collumn = 0; collumn < 10; collumn++)
+                {
+                    if (row != 0)
+                        boxPlane[row, collumn] = boxPlane[row - 1, collumn];
+                    else
+                        boxPlane[row, collumn] = "n";
+                }
+            }
+            
+        }
+        //enum BlockSpecyfication { Block1, Block2, Block3, Block4, Block5 };
+
+        public void nextBlock()
+        {
+            currentBlock = futureBlock;
+            futureBlock = Block.randomBlock();
+
+            currentBlock.x = new Random().Next( -maxCoordination((int)direction.left), 10 - maxCoordination((int)direction.right));
+            currentBlock.y = 0;
         }
     }
 }
