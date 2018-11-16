@@ -19,7 +19,8 @@ C:\Users\Lisica\source\repos\Tetris\Tetris\obj\Debug\Tetris.exe
 C:\Users\Lisica\source\repos\Tetris\Tetris\obj\Debug\Tetris.pdb
 C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_blank.xnb
 C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_blue.xnb
-C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_green.xnb
-C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_red.xnb
 C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_white.xnb
-C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\tetris_yellow.xnb
+C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\font_tetris.xnb
+C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\game_over.xnb
+C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\background.xnb
+C:\Users\Lisica\source\repos\Tetris\Tetris\bin\DesktopGL\AnyCPU\Debug\Content\Plane.xnb

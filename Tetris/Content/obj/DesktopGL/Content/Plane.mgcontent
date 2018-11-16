@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <SourceFile>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_green.png</SourceFile>
-  <SourceTime>2018-10-29T10:14:08.4942635+01:00</SourceTime>
-  <DestFile>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/bin/DesktopGL/Content/tetris_green.xnb</DestFile>
-  <DestTime>2018-10-29T10:42:35.3588906+01:00</DestTime>
+  <SourceFile>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/Plane.png</SourceFile>
+  <SourceTime>2018-11-16T11:06:41.3322597+01:00</SourceTime>
+  <DestFile>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/bin/DesktopGL/Content/Plane.xnb</DestFile>
+  <DestTime>2018-11-16T11:06:51.721854+01:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2018-09-23T23:55:52+02:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

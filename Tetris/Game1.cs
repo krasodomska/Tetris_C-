@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 
 namespace Tetris
 {
@@ -14,11 +15,11 @@ namespace Tetris
         SpriteBatch spriteBatch;
 
         Texture2D textureBlankBox;
-        Texture2D textureBlueBox;
-        Texture2D textureGreenBox;
-        Texture2D textureRedBox;
+        Texture2D textureSquareBox;
         Texture2D textureWhiteBox;
-        Texture2D textureYellowBox;
+        Texture2D textureGameOver;
+        Texture2D textureBackground;
+        Texture2D texturePlane;
 
 
         string[,] boxPlane = new string[20, 10] {
@@ -41,16 +42,18 @@ namespace Tetris
             { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
             { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
             { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "b", "b", "n", "b", "b", "n", "n", "b", "n" }
+            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }
         };
 
         TimeSpan nextUpdateTime = TimeSpan.FromSeconds(0);
         TimeSpan nextUpdateControlTime = TimeSpan.FromSeconds(0);
         Block currentBlock = Block.randomBlock();
         Block futureBlock = Block.randomBlock();
-        double boxFallingSpeed = 0.5; //base speed
-
-        int score = 0;
+        double boxFallingSpeed = 0.5;                                       //base speed
+        private SpriteFont font;
+        private int endGame = 0;
+        private int score = 0;
+       // private int planeWidth = 10;
 
         public Game1()
         {
@@ -58,7 +61,7 @@ namespace Tetris
             Content.RootDirectory = "Content";
 
             graphics.PreferredBackBufferHeight = 650;
-            graphics.PreferredBackBufferWidth = 800;
+            graphics.PreferredBackBufferWidth = 600;
         }
 
         /// <summary>
@@ -67,12 +70,10 @@ namespace Tetris
         /// related content.  Calling base.Initialize will enumerate through any components
         /// and initialize them as well.
         /// </summary>
-        protected override void Initialize()
-        {
-            // TODO: Add your initialization logic here
-
-            base.Initialize();
-        }
+        //protected override void Initialize()
+        //{
+        //  base.Initialize();
+        //}
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -83,14 +84,16 @@ namespace Tetris
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
             textureBlankBox = Content.Load<Texture2D>("tetris_blank");
-            textureBlueBox = Content.Load<Texture2D>("tetris_blue");
-            textureGreenBox = Content.Load<Texture2D>("tetris_green");
-            textureRedBox = Content.Load<Texture2D>("tetris_red");
+            textureSquareBox = Content.Load<Texture2D>("tetris_blue");
             textureWhiteBox = Content.Load<Texture2D>("tetris_white");
-            textureYellowBox = Content.Load<Texture2D>("tetris_yellow");
+            textureGameOver = Content.Load<Texture2D>("game_over");
+            textureBackground = Content.Load<Texture2D>("background");
+            texturePlane = Content.Load<Texture2D>("PLane");
 
+            font = Content.Load<SpriteFont>("font_tetris");
+
+            addBlockGrafic();
 
         }
 
@@ -98,10 +101,9 @@ namespace Tetris
         /// UnloadContent will be called once per game and is the place to unload
         /// game-specific content.
         /// </summary>
-        protected override void UnloadContent()
-        {
-            // TODO: Unload any non ContentManager content here
-        }
+        //protected override void UnloadContent()
+        //{
+        //}
 
         /// <summary>
         /// Allows the game to run logic such as updating the world,
@@ -110,44 +112,260 @@ namespace Tetris
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            currentBlock.printCoordinates();
-            //Console.WriteLine(BlockSpecyfication[0]);
-
-
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-            var kstate = Keyboard.GetState();
-            // controls
-            if (kstate.IsKeyDown(Keys.Down))
-            {
-                boxFallingSpeed = 0.01;
-            }
-            else
-            {
-                boxFallingSpeed = 0.5;
-            }
             if (gameTime.TotalGameTime >= nextUpdateControlTime)
             {
                 nextUpdateControlTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(0.1));
-
-                if (kstate.IsKeyDown(Keys.Left) && collisionDetection((int)direction.left) == false)
-                {
-                    currentBlock.x -= 1;
-                }
-
-                if (kstate.IsKeyDown(Keys.Right) && collisionDetection((int)direction.right) == false)
-                {
-                    if (currentBlock.x < 8)
-                    {
-                        currentBlock.x += 1;
-                    }
-                }
+                controls();
             }
 
-            //how box fall down
             if (gameTime.TotalGameTime >= nextUpdateTime)
             {
                 nextUpdateTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(boxFallingSpeed));
+                blockFallDown();
+
+                //when the row is full i turn on gravity
+                if (numberFullRow() != -1)
+                {
+                    score += 1;
+                    gravity(numberFullRow());
+                }
+            }
+            gameShouldBeOver();
+            base.Update(gameTime);
+        }
+
+        /// <summary>
+        /// This is called when the game should draw itself.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            spriteBatch.Begin();
+            spriteBatch.Draw(textureBackground, new Vector2(0, 0), Color.White);
+            spriteBatch.Draw(texturePlane, new Vector2(10, 10), Color.White);
+
+            if (gameOver(gameShouldBeOver()) == 0)
+            {
+                drawBlock();
+            }
+
+            //what happen when game over
+            if (gameOver(gameShouldBeOver()) == 1)
+            {
+                spriteBatch.Draw(textureGameOver, new Vector2(15, 15), Color.White);
+                spriteBatch.DrawString(font, " Score: " + score.ToString() + "\n \n Press ENTER \n to start new game", new Vector2(20, 250), Color.White);
+            }
+            //Score
+            spriteBatch.DrawString(font, "Score: " + score.ToString(), new Vector2(400, 15), Color.White);
+
+            spriteBatch.End();
+            base.Draw(gameTime);
+        }
+
+        //There are my function
+        enum direction { left, right, down, top };
+
+        public bool collisionDetection(int choosedDirection)
+        {
+            for (int row = 3; row >= 0; row--)
+            {
+                for (int collumn = 3; collumn >= 0; collumn--)
+                {
+                    if (currentBlock.BlockArray[row, collumn] == "w")
+                    {
+                        if (choosedDirection == 0)
+                        {
+                            if (collumn + currentBlock.x == 0 || boxPlane[currentBlock.y + row, currentBlock.x + collumn - 1] != "n")
+                            {
+                                return true;
+                            }
+                        }
+                        if (choosedDirection == 1)
+                        {
+                            if (collumn + currentBlock.x == 9 || boxPlane[currentBlock.y + row, currentBlock.x + collumn + 1] != "n")
+                            {
+                                return true;
+                            }
+                        }
+
+                        if (choosedDirection == 2)
+                        {
+                            if (currentBlock.y + row == 19 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn] != "n")
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private int maxCoordination(int checkedCoorditantion)
+        {
+            int collumnNumber = 0;
+            if (checkedCoorditantion == 1)
+            {
+                collumnNumber = 4;
+                for (int collumn = 3; collumn >= 0; collumn--)   
+                {
+                    collumnNumber -=1;
+                    for (int row = 3; row >= 0; row--)
+                    {
+                        
+                        if (currentBlock.BlockArray[row, collumn] == "w")
+                        {
+
+                            return 9 - collumnNumber;
+                        }
+                    }
+                }
+            }
+            if (checkedCoorditantion == 0)
+            {
+                collumnNumber = -1;
+                for (int collumn = 0; collumn < 4; collumn++)  
+                {
+                    collumnNumber += 1;
+                    for(int row = 3; row >= 0; row--)
+                    {
+                        if (currentBlock.BlockArray[row, collumn] == "w")
+                        {
+
+                            return -collumnNumber;
+                        }
+                    }
+                }
+            }
+            return collumnNumber;
+        }
+
+        private int numberFullRow()
+        {
+            int numberOfFullBox = 1;
+            int fullRow = 0;
+            for (int row = 0; row < 20; row++)
+            {
+                
+                for (int collumn = 0; collumn < 10; collumn++)
+                {
+                    if (boxPlane[row, collumn] == "b")
+                    {
+                        numberOfFullBox += 1;
+                    }
+                }
+                if (numberOfFullBox == 10)
+                {
+
+                    return fullRow;
+                }
+                fullRow += 1;
+                numberOfFullBox = 0;
+            }
+            return -1;
+        }
+
+        private void gravity(int start)
+        {
+            for (int row = start; row >= 0; row--)
+            {
+                for (int collumn = 0; collumn < 10; collumn++)
+                {
+                    if (row != 0)
+                        boxPlane[row, collumn] = boxPlane[row - 1, collumn];
+                    else
+                        boxPlane[row, collumn] = "n";
+                }
+            }
+            
+        }
+
+        private void nextBlock()
+        {
+            currentBlock = futureBlock;
+            futureBlock = Block.randomBlock();
+            currentBlock.x = new Random().Next( maxCoordination((int)direction.left), maxCoordination((int)direction.right));
+            currentBlock.y = 0;
+        }
+        
+        private bool gameShouldBeOver()
+        {
+            if (currentBlock.y == 0 && collisionDetection((int)direction.down) == true)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private int gameOver(bool isItOver)
+        {
+            if (isItOver == true)
+            {
+                endGame = 1;
+            }
+            return endGame;
+
+        }
+
+        private void clearPlane()
+        {
+            for (int row = 0; row < 20; row++)
+            {
+                for (int collumn = 0; collumn < 10; collumn++)
+                {
+                    boxPlane[row, collumn] = "n";
+                }
+            }
+            currentBlock.x = 0;
+            score = 0;
+        }
+
+        private void controls()
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                Exit();
+            var kstate = Keyboard.GetState();
+
+            if (kstate.IsKeyDown(Keys.Enter) && gameOver(gameShouldBeOver()) == 1)
+            {
+                clearPlane();
+                endGame = 0;
+            }
+
+            if (gameOver(gameShouldBeOver()) == 0)
+            {
+                if (kstate.IsKeyDown(Keys.Down))
+                    blockFallDown();
+
+
+                if (kstate.IsKeyDown(Keys.Left) && collisionDetection((int)direction.left) == false)
+                    currentBlock.x -= 1;
+
+
+                if (kstate.IsKeyDown(Keys.Right) && collisionDetection((int)direction.right) == false)
+                    currentBlock.x += 1;
+                
+                if (kstate.IsKeyDown(Keys.Space) && currentBlock.x >= 0)
+                {
+                    currentBlock.rotateBlock();
+                     if (maxCoordination((int)direction.left) > currentBlock.x)
+                     {
+                         currentBlock.x = maxCoordination((int)direction.left);
+                     }
+                     if (maxCoordination((int)direction.right) < currentBlock.x)
+                     {
+                         currentBlock.x = maxCoordination((int)direction.right);
+                     }
+                }
+
+            }
+        }
+
+        private void blockFallDown()
+        {
+            if (gameOver(gameShouldBeOver()) == 0)
+            {
                 if (currentBlock.y < 18 && collisionDetection((int)direction.down) == false)
                     currentBlock.y += 1;
 
@@ -166,71 +384,31 @@ namespace Tetris
                     nextBlock();
                 }
             }
-            //when the row is full i turn on gravity
-
-            if (numberFullRow() != -1)
-            {
-                gravity(numberFullRow());
-            }
-            
-
-            base.Update(gameTime);
+           
         }
 
+        Dictionary<string, Texture2D> blockGrafic = new Dictionary<string, Texture2D>();
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
+        private void addBlockGrafic()
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            blockGrafic.Add("n", textureBlankBox);
+            blockGrafic.Add("w", textureWhiteBox);
+            blockGrafic.Add("b", textureSquareBox);
+        }
 
-            // TODO: Add your drawing code here
-
-            spriteBatch.Begin();
-            //this test if i can show different type of box
-            spriteBatch.Draw(textureBlankBox, new Vector2(605, 5), Color.White);
-            spriteBatch.Draw(textureWhiteBox, new Vector2(640, 5), Color.White);
-            spriteBatch.Draw(textureBlueBox, new Vector2(675, 5), Color.White);
-            spriteBatch.Draw(textureGreenBox, new Vector2(605, 40), Color.White);
-            spriteBatch.Draw(textureYellowBox, new Vector2(640, 40), Color.White);
-            spriteBatch.Draw(textureRedBox, new Vector2(675, 40), Color.White);
-
-            // n = blank, w = white, y = yellow, r = red, g = green, b = blue BOX
-
-            int x; //value of position Box x,y
+        private void drawBlock()
+        {
+            int x;                                                                          //value of position Box x,y
             int y;
+            //box Plane
             for (int row = 0; row < 20; row++)
             {
                 for (int collumn = 0; collumn < 10; collumn++)
                 {
-                    x = collumn * 31 + 5;
+                    x = collumn * 31 + 15;
                     y = row * 31 + 15;
-                    if (boxPlane[row, collumn] == "n")
-                    {
-                        spriteBatch.Draw(textureBlankBox, new Vector2(x, y), Color.White);
-                    }
-                    if (boxPlane[row, collumn] == "w")
-                    {
-                        spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
-                    }
-                    if (boxPlane[row, collumn] == "r")
-                    {
-                        spriteBatch.Draw(textureRedBox, new Vector2(x, y), Color.White);
-                    }
-                    if (boxPlane[row, collumn] == "g")
-                    {
-                        spriteBatch.Draw(textureGreenBox, new Vector2(x, y), Color.White);
-                    }
-                    if (boxPlane[row, collumn] == "b")
-                    {
-                        spriteBatch.Draw(textureBlueBox, new Vector2(x, y), Color.White);
-                    }
-                    if (boxPlane[row, collumn] == "y")
-                    {
-                        spriteBatch.Draw(textureYellowBox, new Vector2(x, y), Color.White);
-                    }
+                    spriteBatch.Draw(blockGrafic[boxPlane[row, collumn]], new Vector2(x, y), Color.White);
+
                 }
 
             }
@@ -239,29 +417,10 @@ namespace Tetris
             {
                 for (int collumn = 0; collumn < 4; collumn++)
                 {
-                    x = (currentBlock.x + collumn) * 31 + 5;
+                    x = (currentBlock.x + collumn) * 31 + 15;
                     y = (currentBlock.y + row) * 31 + 15;
-
-                    if (currentBlock.BlockArray[row, collumn] == "w")
-                    {
-                        spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
-                    }
-                    if (currentBlock.BlockArray[row, collumn] == "r")
-                    {
-                        spriteBatch.Draw(textureRedBox, new Vector2(x, y), Color.White);
-                    }
-                    if (currentBlock.BlockArray[row, collumn] == "g")
-                    {
-                        spriteBatch.Draw(textureGreenBox, new Vector2(x, y), Color.White);
-                    }
-                    if (currentBlock.BlockArray[row, collumn] == "b")
-                    {
-                        spriteBatch.Draw(textureBlueBox, new Vector2(x, y), Color.White);
-                    }
-                    if (currentBlock.BlockArray[row, collumn] == "y")
-                    {
-                        spriteBatch.Draw(textureYellowBox, new Vector2(x, y), Color.White);
-                    }
+                    if (currentBlock.BlockArray[row, collumn] != "n")
+                        spriteBatch.Draw(blockGrafic[currentBlock.BlockArray[row, collumn]], new Vector2(x, y), Color.White);
                 }
 
             }
@@ -272,155 +431,11 @@ namespace Tetris
                 for (int collumn = 0; collumn < 4; collumn++)
                 {
                     x = (futureBlock.x + collumn) * 31 + 405;
-                    y = (futureBlock.y +1 + row) * 31 + 15;
-
-                    if (futureBlock.BlockArray[row, collumn] == "n")
-                    {
-                        spriteBatch.Draw(textureBlankBox, new Vector2(x, y), Color.White);
-                    }
-                    if (futureBlock.BlockArray[row, collumn] == "w")
-                    {
-                        spriteBatch.Draw(textureWhiteBox, new Vector2(x, y), Color.White);
-                    }
+                    y = (futureBlock.y + 1 + row) * 31 + 100;
+                    spriteBatch.Draw(blockGrafic[futureBlock.BlockArray[row, collumn]], new Vector2(x, y), Color.White);
 
                 }
             }
-
-            spriteBatch.End();
-            base.Draw(gameTime);
-        }
-
-
-
-        //Her
-        enum direction { left, right, down, top };
-
-        public bool collisionDetection(int choosedDirection)
-        {
-            for (int row = 3; row >= 0; row--)
-            {
-                for (int collumn = 3; collumn >= 0; collumn--)
-                {
-                    if (currentBlock.BlockArray[row, collumn] == "w")
-                    {
-                        if (choosedDirection == 0)
-                        {
-                            if (collumn + currentBlock.x == 0 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn - 1] != "n")
-                            {
-                                return true;
-                            }
-                        }
-                        if (choosedDirection == 1)
-                        {
-                            if (collumn + currentBlock.x == 9 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn + 1] != "n")
-                            {
-                                return true;
-                            }
-                        }
-
-                        if (choosedDirection == 2)
-                        {
-
-                            if (currentBlock.y + row == 19 || boxPlane[currentBlock.y + 1 + row, currentBlock.x + collumn] != "n")
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        public int maxCoordination(int checkedCoorditantion)
-        {
-            int collumnNumber = 0;
-            if (checkedCoorditantion == 1)
-            {
-                collumnNumber = 4;
-                for (int collumn = 3; collumn >= 0; collumn--)   
-                {
-                    collumnNumber -=1;
-                    for (int row = 3; row >= 0; row--)
-                    {
-                        
-                        if (currentBlock.BlockArray[row, collumn] == "w")
-                        {
-
-                            return collumnNumber;
-                        }
-                    }
-                }
-            }
-            if (checkedCoorditantion == 0)
-            {
-                collumnNumber = -1;
-                for (int collumn = 0; collumn < 4; collumn++)  
-                {
-                    collumnNumber += 1;
-                    for(int row = 3; row >= 0; row--)
-                    {
-                        if (currentBlock.BlockArray[row, collumn] == "w")
-                        {
-
-                            return collumnNumber;
-                        }
-                    }
-                }
-            }
-            return collumnNumber;
-        }
-
-    
-
-        public int numberFullRow()
-        {
-            int numberOfFullBox = 1;
-            int fullRow = 0;
-            for (int row = 0; row < 20; row++)
-            {
-                
-                for (int collumn = 0; collumn < 10; collumn++)
-                {
-                    if (boxPlane[row, collumn] == "b")
-                    {
-                        numberOfFullBox += 1;
-                    }
-                }
-                if (numberOfFullBox == 10)
-                {
-                    score += 1;
-                    Console.WriteLine(score);
-                    return fullRow;
-                }
-                fullRow += 1;
-                numberOfFullBox = 0;
-            }
-            return -1;
-        }
-        public void gravity(int start)
-        {
-            for (int row = start; row >= 0; row--)
-            {
-                for (int collumn = 0; collumn < 10; collumn++)
-                {
-                    if (row != 0)
-                        boxPlane[row, collumn] = boxPlane[row - 1, collumn];
-                    else
-                        boxPlane[row, collumn] = "n";
-                }
-            }
-            
-        }
-        //enum BlockSpecyfication { Block1, Block2, Block3, Block4, Block5 };
-
-        public void nextBlock()
-        {
-            currentBlock = futureBlock;
-            futureBlock = Block.randomBlock();
-
-            currentBlock.x = new Random().Next( -maxCoordination((int)direction.left), 10 - maxCoordination((int)direction.right));
-            currentBlock.y = 0;
         }
     }
 }

@@ -4,14 +4,16 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
+    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/background.png</File>
+    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/font_tetris.spritefont</File>
+    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/game_over.jpg</File>
+    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/Plane.png</File>
     <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_blank.png</File>
     <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_blue.png</File>
-    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_green.png</File>
-    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_red.png</File>
     <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_white.png</File>
-    <File>C:/Users/Lisica/source/repos/Tetris/Tetris/Content/tetris_yellow.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
