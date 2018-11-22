@@ -11,7 +11,8 @@ namespace Tetris
     {
         public int x = 0;
         public int y = -1; //coordinates of falling block
-        public string[,] BlockArray = new string[4, 4];
+        public string[,] BlockArray = new string[height, width];
+        public static int width = 4, height = 4;
 
         public static string[,] blockZ = new string[4, 4]
             {
@@ -66,30 +67,40 @@ namespace Tetris
         public static Block randomBlock()
         {
             string[,] array = blockZ;
-            int randomBlock = new Random().Next(7);
+            int randomBlock = new Random().Next(7); //This choose random number from 0 to 6, there are 7 types of blocks
 
-            if (randomBlock == 0)
-                array = blockZ;
-            if (randomBlock == 1)
-                array = blockT;
-            if (randomBlock == 2)
-                array = blockO;
-            if (randomBlock == 3)
-                array = blockI;
-            if (randomBlock == 4)
-                array = blockL;
-            if (randomBlock == 5)
-                array = blockLL;
-            if (randomBlock == 6)
-                array = blockS;
+            switch (randomBlock)
+            {
+                case 0:
+                    array = blockZ;
+                    break;
+                case 1:
+                    array = blockT;
+                    break;
+                case 2:
+                    array = blockO;
+                    break;
+                case 3:
+                    array = blockI;
+                    break;
+                case 4:
+                    array = blockL;
+                    break;
+                case 5:
+                    array = blockLL;
+                    break;
+                case 6:
+                    array = blockS;
+                    break;
+            }
             return new Block(array);
         }
 
-        private bool swiftBlock(string[,] changedArray)
+        private bool isBlockShiftable(string[,] changedArray)
         {
-            for (int row = 0; row < 4; row++)
+            for (int row = 0; row < height; row++)
             {
-                for (int collumn = 0; collumn < 4; collumn++)
+                for (int collumn = 0; collumn < width; collumn++)
                 {
                     if (changedArray[row, collumn] == "w" && collumn == 0)
                         return false;
@@ -102,24 +113,24 @@ namespace Tetris
         public void rotateBlock()
         {
             string [,] temporaryArray = new string [4,4];
-            for (int row = 0; row < 4; row++)
+            for (int row = 0; row < height; row++)
             {
-                for (int collumn = 0; collumn < 4; collumn++)
+                for (int collumn = 0; collumn < width; collumn++)
                 {
                     temporaryArray[row, collumn] = this.BlockArray[collumn, 3-row];
                 }
             }
-            for (int step = 0; step <= 3; step++)
+            for (int step = 0; step < width; step++)
             {
-                if (swiftBlock(temporaryArray) == true)
+                if (isBlockShiftable(temporaryArray) == true)
                 {
-                    for (int row = 0; row < 4; row++)
+                    for (int row = 0; row < height; row++)
                     {
-                        for (int collumn = 1; collumn < 4; collumn++)
+                        for (int collumn = 1; collumn < width; collumn++)
                         {
                             temporaryArray[row, collumn - 1] = temporaryArray[row, collumn];
 
-                            if (collumn == 3)
+                            if (collumn == width - 1)
                                 temporaryArray[row, collumn] = "n";
 
                         }
@@ -132,13 +143,7 @@ namespace Tetris
 
         public Block()
         {
-            BlockArray = new string[4, 4]
-            {
-                { "n","n","n","n"},
-                { "n","n","n","n"},
-                { "n","n","n","n"},
-                { "n","n","n","n"}
-            };
+            BlockArray = new string[4, 4];
         }
 
         public Block(string[,] array)

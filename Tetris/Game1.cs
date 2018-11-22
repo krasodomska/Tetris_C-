@@ -20,38 +20,17 @@ namespace Tetris
         Texture2D textureGameOver;
         Texture2D textureBackground;
         Texture2D texturePlane;
+        private static int planeHeight = 20, planeWidth = 10;
 
+        string[,] boxPlane = new string[planeHeight, planeWidth];
 
-        string[,] boxPlane = new string[20, 10] {
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" },
-            { "n", "n", "n", "n", "n", "n", "n", "n", "n", "n" }
-        };
-
-        TimeSpan nextUpdateTime = TimeSpan.FromSeconds(0);
+        TimeSpan nextUpdateFallingTime = TimeSpan.FromSeconds(0);
         TimeSpan nextUpdateControlTime = TimeSpan.FromSeconds(0);
         Block currentBlock = Block.randomBlock();
         Block futureBlock = Block.randomBlock();
         double boxFallingSpeed = 0.5;                                       //base speed
         private SpriteFont font;
-        private int endGame = 0;
+        private bool endGame = false;
         private int score = 0;
        // private int planeWidth = 10;
 
@@ -94,6 +73,7 @@ namespace Tetris
             font = Content.Load<SpriteFont>("font_tetris");
 
             addBlockGrafic();
+            fillBasePlaneWithBlackBox(boxPlane);
 
         }
 
@@ -118,19 +98,19 @@ namespace Tetris
                 controls();
             }
 
-            if (gameTime.TotalGameTime >= nextUpdateTime)
+            if (gameTime.TotalGameTime >= nextUpdateFallingTime)
             {
-                nextUpdateTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(boxFallingSpeed));
+                nextUpdateFallingTime = gameTime.TotalGameTime.Add(TimeSpan.FromSeconds(boxFallingSpeed));
                 blockFallDown();
 
                 //when the row is full i turn on gravity
-                if (numberFullRow() != -1)
+                if (indexFullRow() != -1)
                 {
                     score += 1;
-                    gravity(numberFullRow());
+                    gravity(indexFullRow());
                 }
             }
-            gameShouldBeOver();
+            
             base.Update(gameTime);
         }
 
@@ -145,13 +125,13 @@ namespace Tetris
             spriteBatch.Draw(textureBackground, new Vector2(0, 0), Color.White);
             spriteBatch.Draw(texturePlane, new Vector2(10, 10), Color.White);
 
-            if (gameOver(gameShouldBeOver()) == 0)
+            if (endGame == false)
             {
                 drawBlock();
             }
 
             //what happen when game over
-            if (gameOver(gameShouldBeOver()) == 1)
+            if (endGame)
             {
                 spriteBatch.Draw(textureGameOver, new Vector2(15, 15), Color.White);
                 spriteBatch.DrawString(font, " Score: " + score.ToString() + "\n \n Press ENTER \n to start new game", new Vector2(20, 250), Color.White);
@@ -164,13 +144,23 @@ namespace Tetris
         }
 
         //There are my function
+        private void fillBasePlaneWithBlackBox(string[,] filledArray)
+        {
+            for (int collumn = 0; collumn < planeWidth; collumn ++)
+                for(int row = 0; row < planeHeight; row ++)
+                {
+                    filledArray[row, collumn] = "n";
+                }
+
+        }
+
         enum direction { left, right, down, top };
 
-        public bool collisionDetection(int choosedDirection)
+        public bool isMovePossible(int choosedDirection)      //check is it possible to move block in choosed direction
         {
-            for (int row = 3; row >= 0; row--)
+            for (int row = 0; row < Block.width; row++)
             {
-                for (int collumn = 3; collumn >= 0; collumn--)
+                for (int collumn = 0; collumn < Block.height; collumn++)
                 {
                     if (currentBlock.BlockArray[row, collumn] == "w")
                     {
@@ -202,22 +192,22 @@ namespace Tetris
             return false;
         }
 
-        private int maxCoordination(int checkedCoorditantion)
+        private int maxCoordination(int checkedCoorditantion) //check and return maximum posiible coordinate for currentBlock in choosed direction
         {
             int collumnNumber = 0;
             if (checkedCoorditantion == 1)
             {
-                collumnNumber = 4;
-                for (int collumn = 3; collumn >= 0; collumn--)   
+                collumnNumber = Block.width;
+                for (int collumn = Block.width - 1; collumn >= 0; collumn--)   
                 {
                     collumnNumber -=1;
-                    for (int row = 3; row >= 0; row--)
+                    for (int row = Block.height - 1; row >= 0; row--)
                     {
                         
                         if (currentBlock.BlockArray[row, collumn] == "w")
                         {
 
-                            return 9 - collumnNumber;
+                            return planeWidth - 1 - collumnNumber;
                         }
                     }
                 }
@@ -225,10 +215,10 @@ namespace Tetris
             if (checkedCoorditantion == 0)
             {
                 collumnNumber = -1;
-                for (int collumn = 0; collumn < 4; collumn++)  
+                for (int collumn = 0; collumn < Block.width; collumn++)  
                 {
                     collumnNumber += 1;
-                    for(int row = 3; row >= 0; row--)
+                    for(int row = Block.height - 1; row >= 0; row--)
                     {
                         if (currentBlock.BlockArray[row, collumn] == "w")
                         {
@@ -241,21 +231,21 @@ namespace Tetris
             return collumnNumber;
         }
 
-        private int numberFullRow()
+        private int indexFullRow()                           //return index of full row
         {
             int numberOfFullBox = 1;
             int fullRow = 0;
-            for (int row = 0; row < 20; row++)
+            for (int row = 0; row < planeHeight; row++)
             {
                 
-                for (int collumn = 0; collumn < 10; collumn++)
+                for (int collumn = 0; collumn < planeWidth; collumn++)
                 {
                     if (boxPlane[row, collumn] == "b")
                     {
                         numberOfFullBox += 1;
                     }
                 }
-                if (numberOfFullBox == 10)
+                if (numberOfFullBox == planeWidth)
                 {
 
                     return fullRow;
@@ -266,11 +256,11 @@ namespace Tetris
             return -1;
         }
 
-        private void gravity(int start)
+        private void gravity(int start)                     //unmovable box fall 1 step down
         {
             for (int row = start; row >= 0; row--)
             {
-                for (int collumn = 0; collumn < 10; collumn++)
+                for (int collumn = 0; collumn < planeWidth; collumn++)
                 {
                     if (row != 0)
                         boxPlane[row, collumn] = boxPlane[row - 1, collumn];
@@ -281,44 +271,22 @@ namespace Tetris
             
         }
 
-        private void nextBlock()
+        private void nextBlock()                            //random new array for block
         {
             currentBlock = futureBlock;
             futureBlock = Block.randomBlock();
             currentBlock.x = new Random().Next( maxCoordination((int)direction.left), maxCoordination((int)direction.right));
             currentBlock.y = 0;
+            gameOver();
         }
         
-        private bool gameShouldBeOver()
+       private void gameOver()
         {
-            if (currentBlock.y == 0 && collisionDetection((int)direction.down) == true)
+            if (currentBlock.y == 0 && isMovePossible((int)direction.down))
             {
-                return true;
+                endGame = true;
             }
-            return false;
-        }
 
-        private int gameOver(bool isItOver)
-        {
-            if (isItOver == true)
-            {
-                endGame = 1;
-            }
-            return endGame;
-
-        }
-
-        private void clearPlane()
-        {
-            for (int row = 0; row < 20; row++)
-            {
-                for (int collumn = 0; collumn < 10; collumn++)
-                {
-                    boxPlane[row, collumn] = "n";
-                }
-            }
-            currentBlock.x = 0;
-            score = 0;
         }
 
         private void controls()
@@ -327,23 +295,23 @@ namespace Tetris
                 Exit();
             var kstate = Keyboard.GetState();
 
-            if (kstate.IsKeyDown(Keys.Enter) && gameOver(gameShouldBeOver()) == 1)
+            if (kstate.IsKeyDown(Keys.Enter) && endGame)
             {
-                clearPlane();
-                endGame = 0;
+                fillBasePlaneWithBlackBox(boxPlane);
+                currentBlock.x = 0;
+                score = 0;
+                endGame = false;
             }
 
-            if (gameOver(gameShouldBeOver()) == 0)
+            if (endGame == false)
             {
                 if (kstate.IsKeyDown(Keys.Down))
                     blockFallDown();
 
-
-                if (kstate.IsKeyDown(Keys.Left) && collisionDetection((int)direction.left) == false)
+                if (kstate.IsKeyDown(Keys.Left) && isMovePossible((int)direction.left) == false)
                     currentBlock.x -= 1;
 
-
-                if (kstate.IsKeyDown(Keys.Right) && collisionDetection((int)direction.right) == false)
+                if (kstate.IsKeyDown(Keys.Right) && isMovePossible((int)direction.right) == false)
                     currentBlock.x += 1;
                 
                 if (kstate.IsKeyDown(Keys.Space) && currentBlock.x >= 0)
@@ -364,16 +332,16 @@ namespace Tetris
 
         private void blockFallDown()
         {
-            if (gameOver(gameShouldBeOver()) == 0)
+            if (endGame == false)
             {
-                if (currentBlock.y < 18 && collisionDetection((int)direction.down) == false)
+                if (currentBlock.y < 18 && isMovePossible((int)direction.down) == false)
                     currentBlock.y += 1;
 
-                if (collisionDetection((int)direction.down) == true)
+                else if (isMovePossible((int)direction.down))
                 {
-                    for (int row = 3; row >= 0; row--)
+                    for (int row = 0; row < Block.height; row++)
                     {
-                        for (int collumn = 3; collumn >= 0; collumn--)
+                        for (int collumn = 0; collumn < Block.width; collumn++)
                         {
                             if (currentBlock.BlockArray[row, collumn] == "w")
                             {
@@ -398,15 +366,19 @@ namespace Tetris
 
         private void drawBlock()
         {
-            int x;                                                                          //value of position Box x,y
+            int x;   //value of block position x,y
             int y;
-            //box Plane
-            for (int row = 0; row < 20; row++)
+            int boxPictureDimension = 31; //in px
+            int planeMargin = 15;
+            int nextBlockMarginLeft = 405;
+            int nextBlockMarginTop = 100;
+
+            for (int row = 0; row < planeHeight; row++)
             {
-                for (int collumn = 0; collumn < 10; collumn++)
+                for (int collumn = 0; collumn < planeWidth; collumn++)
                 {
-                    x = collumn * 31 + 15;
-                    y = row * 31 + 15;
+                    x = collumn * boxPictureDimension + planeMargin;
+                    y = row * boxPictureDimension + planeMargin;
                     spriteBatch.Draw(blockGrafic[boxPlane[row, collumn]], new Vector2(x, y), Color.White);
 
                 }
@@ -417,8 +389,8 @@ namespace Tetris
             {
                 for (int collumn = 0; collumn < 4; collumn++)
                 {
-                    x = (currentBlock.x + collumn) * 31 + 15;
-                    y = (currentBlock.y + row) * 31 + 15;
+                    x = (currentBlock.x + collumn) * boxPictureDimension + planeMargin;
+                    y = (currentBlock.y + row) * boxPictureDimension + planeMargin;
                     if (currentBlock.BlockArray[row, collumn] != "n")
                         spriteBatch.Draw(blockGrafic[currentBlock.BlockArray[row, collumn]], new Vector2(x, y), Color.White);
                 }
@@ -426,12 +398,12 @@ namespace Tetris
             }
 
             //Side block
-            for (int row = 0; row < 4; row++)
+            for (int row = 0; row < Block.height; row++)
             {
-                for (int collumn = 0; collumn < 4; collumn++)
+                for (int collumn = 0; collumn < Block.height; collumn++)
                 {
-                    x = (futureBlock.x + collumn) * 31 + 405;
-                    y = (futureBlock.y + 1 + row) * 31 + 100;
+                    x = (futureBlock.x + collumn) * boxPictureDimension + nextBlockMarginLeft; 
+                    y = (futureBlock.y + 1 + row) * boxPictureDimension + nextBlockMarginTop;
                     spriteBatch.Draw(blockGrafic[futureBlock.BlockArray[row, collumn]], new Vector2(x, y), Color.White);
 
                 }
